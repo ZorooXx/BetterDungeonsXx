@@ -1,0 +1,14 @@
+{
+ "hinweis": "Erzeugt von ansichten.js. Nicht von Hand ändern.",
+ "ansichten": [
+  {
+   "id": "buendel",
+   "titel": "Floor II · Bündelsystem",
+   "pfad": "buendel/",
+   "sha256": "d215faa83e3bfd8878ba9f05df96725e420af3e00e1c8aecf563d309f81c98c6",
+   "bytes": 585411,
+   "datenStand": "17.11.2026",
+   "gebaut": "2026-11-17T22:24:11.402Z"
+  }
+ ]
+}
