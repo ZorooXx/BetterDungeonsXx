@@ -9,6 +9,15 @@
    "bytes": 585411,
    "datenStand": "17.11.2026",
    "gebaut": "2026-11-17T22:24:11.402Z"
+  },
+  {
+   "id": "gegner",
+   "titel": "Floor II · Gegner",
+   "pfad": "gegner/",
+   "sha256": "df49d52d297d400771c03cf38171299f491522bc3b6e906b5302b3d5ec343a82",
+   "bytes": 658390,
+   "datenStand": "12.11.2026",
+   "gebaut": "2026-11-18T16:19:19.792Z"
   }
  ]
 }
