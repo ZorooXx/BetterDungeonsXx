@@ -14,10 +14,10 @@
    "id": "gegner",
    "titel": "Floor II · Gegner",
    "pfad": "gegner/",
-   "sha256": "df49d52d297d400771c03cf38171299f491522bc3b6e906b5302b3d5ec343a82",
-   "bytes": 658390,
+   "sha256": "c927aafdef31a3379d0958070acd28dc0365c804b19acad8ed933c1720b81e96",
+   "bytes": 658498,
    "datenStand": "12.11.2026",
-   "gebaut": "2026-11-18T16:19:19.792Z"
+   "gebaut": "2026-11-18T16:21:51.116Z"
   }
  ]
 }
