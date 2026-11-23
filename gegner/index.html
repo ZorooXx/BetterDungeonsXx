@@ -203,12 +203,13 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
 <script>(function () {
   'use strict';
   var D = window.DATEN, ROEM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-  var KAT = { normal: ['Häufige Gegner', 'Häufig', 'Diese Gegner triffst du überall in der Festung.'], elite: ['Elite-Gegner', 'Elite', 'Seltener und deutlich stärker, mit eigenen Fähigkeiten.'], zwischen: ['Zwischenbosse', 'Zwischenboss', 'Starke Einzelgegner auf dem Weg durch die Festung.'], boss: ['Boss', 'Boss', 'Der wahre Boss der Festung.'], helfer: ['Helfer', 'Helfer', 'Gegner, die von anderen herbeigerufen werden.'] };
-  var FARBE = { normal: 'var(--k-normal)', elite: 'var(--k-elite)', zwischen: 'var(--k-zwischen)', boss: 'var(--k-boss)', helfer: 'var(--k-helfer)' };
-  var HEX = { normal: '#c9a27a', elite: '#c58bff', zwischen: '#ffb347', boss: '#ff5e4d', helfer: '#8fb6c9' };
-  var Z = { stufe: 0, spoiler: false, kat: 'alle', suche: '', sort: 'kat', offen: {} };
-  try { var m = JSON.parse(localStorage.getItem('bdx-gegner') || '{}'); if (m.stufe >= 0 && m.stufe < 5) Z.stufe = m.stufe; Z.spoiler = !!m.spoiler; } catch (e) { /* ohne Speicher geht es auch */ }
-  var merke = function () { try { localStorage.setItem('bdx-gegner', JSON.stringify({ stufe: Z.stufe, spoiler: Z.spoiler })); } catch (e) { /* egal */ } };
+  var KAT = D.kat || { normal: ['Häufige Gegner', 'Häufig', 'Diese Gegner triffst du überall in der Festung.'], elite: ['Elite-Gegner', 'Elite', 'Seltener und deutlich stärker, mit eigenen Fähigkeiten.'], zwischen: ['Zwischenbosse', 'Zwischenboss', 'Starke Einzelgegner auf dem Weg durch die Festung.'], boss: ['Boss', 'Boss', 'Der wahre Boss der Festung.'], helfer: ['Helfer', 'Helfer', 'Gegner, die von anderen herbeigerufen werden.'] };
+  var FARBE = {}; Object.keys(KAT).forEach(function (k) { FARBE[k] = 'var(--k-' + k + ')'; });
+  var ORD = D.ord || ['normal', 'elite', 'zwischen', 'boss', 'helfer'], OHNE = D.alleOhne || ['helfer'];
+  var HEX = D.hex || { normal: '#c9a27a', elite: '#c58bff', zwischen: '#ffb347', boss: '#ff5e4d', helfer: '#8fb6c9' };
+  var Z = { stufe: 0, spoiler: false, kat: 'alle', suche: '', sort: 'kat', offen: {} }, SPEICHER = D.speicher || 'bdx-gegner';
+  try { var m = JSON.parse(localStorage.getItem(SPEICHER) || '{}'); if (m.stufe >= 0 && m.stufe < 5) Z.stufe = m.stufe; Z.spoiler = !!m.spoiler; } catch (e) { /* ohne Speicher geht es auch */ }
+  var merke = function () { try { localStorage.setItem(SPEICHER, JSON.stringify({ stufe: Z.stufe, spoiler: Z.spoiler })); } catch (e) { /* egal */ } };
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
   var zahl = function (x) { return (Math.round(x * 10) / 10).toLocaleString('de-DE'); };
@@ -219,12 +220,17 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
   var sichtbar = function (g) { return !g.sp || Z.spoiler || Z.offen[g.k]; };
   var nameVon = function (g) { return sichtbar(g) ? g.n : '???'; };
   var grossA = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
+  // Schaden: null = kein normaler Schlag (nur Fähigkeiten); dz = Wert fürs Diagramm/Sortieren
+  var dmT = function (g, s, f) { return g.dm && g.dm[s] ? bereich(g.dm[s], f || ganz) : '–'; };
+  var dz = function (g, s) { return g.dz ? g.dz[s] : g.dm[s]; };
+  var link = function (u, t, kl) { return u ? '<a href="' + esc(u) + '"' + (kl ? ' class="' + kl + '"' : '') + '>' + t + '</a>' : t; };
+  var m3d = function (g, gross) { return g.m && window.MODELLE && window.MODELLE[g.m] ? '<canvas class="m3d" data-m="' + esc(g.m) + '"' + (gross ? ' data-gross="1" width="440" height="440" title="Ziehen dreht das Modell"' : ' width="300" height="240"') + '></canvas>' : ''; };
 
   // ---------- Kopf ----------
   function kacheln() {
     var n = function (k) { return D.g.filter(function (g) { return g.kat === k; }).length; }, sk = D.g.reduce(function (s, g) { return s + g.sk.length; }, 0), dr = {};
     D.g.forEach(function (g) { Object.keys(g.dr).forEach(function (t) { g.dr[t].e.forEach(function (e) { dr[e.n] = 1; }); }); });
-    $('#kacheln').innerHTML = [[n('normal'), 'häufige Gegner'], [n('elite'), 'Elite-Gegner'], [n('zwischen'), 'Zwischenbosse'], [n('boss') || '?', n('boss') ? 'Boss' : 'Boss (noch in Arbeit)'], [sk, 'Fähigkeiten'], [Object.keys(dr).length, 'Beute-Gegenstände']].map(function (x) { return '<div class="kachel"><b>' + x[0] + '</b><span>' + x[1] + '</span></div>'; }).join('');
+    $('#kacheln').innerHTML = (D.kacheln ? D.kacheln.map(function (k) { return [k[0] === 'sk' ? sk : k[0] === 'dr' ? Object.keys(dr).length : n(k[0]), k[1]]; }) : [[n('normal'), 'häufige Gegner'], [n('elite'), 'Elite-Gegner'], [n('zwischen'), 'Zwischenbosse'], [n('boss') || '?', n('boss') ? 'Boss' : 'Boss (noch in Arbeit)'], [sk, 'Fähigkeiten'], [Object.keys(dr).length, 'Beute-Gegenstände']]).map(function (x) { return '<div class="kachel"><b>' + x[0] + '</b><span>' + x[1] + '</span></div>'; }).join('');
   }
   function stufen() {
     var mx = { hp: 0, dmg: 0, anz: 0, lv: 0 }; D.stufen.forEach(function (s) { for (var k in mx) mx[k] = Math.max(mx[k], s[k]); });
@@ -239,23 +245,23 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
   // ---------- Diagramm: Leben gegen Schaden ----------
   function diagramm() {
     var W = 1200, H = 430, L = 62, R = 22, T = 16, B = 44, s = Z.stufe, gs = D.g.filter(function (g) { return g.kat !== 'helfer'; });
-    var mitte = function (p) { return (p[0] + p[1]) / 2; }, xs = gs.map(function (g) { return mitte(g.hp[s]); }), ys = gs.map(function (g) { return mitte(g.dm[s]); });
+    var mitte = function (p) { return (p[0] + p[1]) / 2; }, xs = gs.map(function (g) { return mitte(g.hp[s]); }), ys = gs.map(function (g) { return mitte(dz(g, s)); });
     var x0 = Math.log10(Math.min.apply(0, xs) * 0.8), x1 = Math.log10(Math.max.apply(0, xs) * 1.25), y0 = Math.log10(Math.min.apply(0, ys) * 0.85), y1 = Math.log10(Math.max.apply(0, ys) * 1.2);
     var X = function (v) { return L + (Math.log10(v) - x0) / (x1 - x0) * (W - L - R); }, Y = function (v) { return H - B - (Math.log10(v) - y0) / (y1 - y0) * (H - T - B); };
     var o = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Leben und Schaden aller Gegner auf Stufe ' + ROEM[s] + '">';
     [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000].forEach(function (v) { if (Math.log10(v) < x0 || Math.log10(v) > x1) return; o += '<line class="gitter" x1="' + X(v) + '" x2="' + X(v) + '" y1="' + T + '" y2="' + (H - B) + '"/><text x="' + X(v) + '" y="' + (H - B + 18) + '" text-anchor="middle">' + ganz(v) + ' ❤</text>'; });
     [10, 20, 50, 100, 200, 500, 1000].forEach(function (v) { if (Math.log10(v) < y0 || Math.log10(v) > y1) return; o += '<line class="gitter" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>'; });
-    o += '<text x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">Leben →</text><text x="' + (L + 10) + '" y="' + (T + 14) + '">↑ Schaden im Nahkampf</text>';
+    o += '<text x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">Leben →</text><text x="' + (L + 10) + '" y="' + (T + 14) + '">' + esc(D.diaY || '↑ Schaden im Nahkampf') + '</text>';
     gs.forEach(function (g, i) { var r = g.kat === 'boss' ? 11 : g.kat === 'zwischen' ? 9 : g.kat === 'elite' ? 7.5 : 6;
       o += '<circle class="pkt" data-k="' + g.k + '" cx="' + X(xs[i]).toFixed(1) + '" cy="' + Y(ys[i]).toFixed(1) + '" r="' + r + '" fill="' + HEX[g.kat] + '" fill-opacity="' + (sichtbar(g) ? .95 : .55) + '" tabindex="0"><title>' + esc(nameVon(g)) + '</title></circle>'; });
     $('#dia').innerHTML = o + '</svg>';
-    $('#legende').innerHTML = ['normal', 'elite', 'zwischen', 'boss'].filter(function (k) { return D.g.some(function (g) { return g.kat === k; }); }).map(function (k) { return '<span><i style="background:' + HEX[k] + '"></i>' + KAT[k][1] + '</span>'; }).join('') + '<span>Beide Achsen sind gestaucht, damit kleine und große Gegner in ein Bild passen. Punkt anklicken öffnet den Steckbrief.</span>';
+    $('#legende').innerHTML = ORD.filter(function (k) { return OHNE.indexOf(k) < 0; }).filter(function (k) { return D.g.some(function (g) { return g.kat === k; }); }).map(function (k) { return '<span><i style="background:' + HEX[k] + '"></i>' + KAT[k][1] + '</span>'; }).join('') + '<span>Beide Achsen sind gestaucht, damit kleine und große Gegner in ein Bild passen. Punkt anklicken öffnet den Steckbrief.</span>';
   }
 
   // ---------- Karten ----------
   function passt(g) {
     if (Z.kat !== 'alle' && g.kat !== Z.kat) return false;
-    if (Z.kat === 'alle' && g.kat === 'helfer') return false;
+    if (Z.kat === 'alle' && OHNE.indexOf(g.kat) >= 0) return false;
     if (!Z.suche) return true;
     var q = Z.suche.toLowerCase(), offen = sichtbar(g);
     var text = (offen ? [g.n, g.rolle, g.kurz].concat(g.sk.map(function (x) { return x.n + ' ' + (x.d || ''); }), g.merk.map(function (x) { return x.n; })) : []).concat([g.typ, KAT[g.kat][1]]).join(' ').toLowerCase();
@@ -265,14 +271,14 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
   function karte(g) {
     var s = Z.stufe, zu = !sichtbar(g);
     return '<button class="karte' + (zu ? ' zu' : '') + '" data-k="' + g.k + '" style="--kf:' + FARBE[g.kat] + '" aria-label="' + esc(zu ? KAT[g.kat][1] + ', Spoiler: zum Aufdecken klicken' : g.n + ', Steckbrief öffnen') + '">' +
-      '<div class="buehne"><span class="marke">' + KAT[g.kat][1] + '</span><div class="bild b' + g.b + '"></div></div>' +
+      '<div class="buehne"><span class="marke">' + KAT[g.kat][1] + '</span><div class="bild b' + g.b + '"></div>' + (zu ? '' : m3d(g)) + '</div>' +
       '<div class="in"><h4>' + esc(zu ? '??????????' : g.n) + '</h4><div class="typ">' + esc(zu ? '???' : g.typ) + '</div><div class="rolle">' + esc(zu ? 'Verborgen, damit du dich überraschen lassen kannst.' : g.rolle) + '</div>' +
-      '<div class="werte"><div class="wert"><span>Level</span><b>' + bereich(g.lv[s], ganz) + '</b></div><div class="wert"><span>Leben</span><b>' + bereich(g.hp[s], ganz) + '</b></div><div class="wert"><span>Schaden</span><b>' + bereich(g.dm[s], ganz) + '</b></div></div></div>' +
+      '<div class="werte"><div class="wert"><span>Level</span><b>' + bereich(g.lv[s], ganz) + '</b></div><div class="wert"><span>Leben</span><b>' + bereich(g.hp[s], ganz) + '</b></div><div class="wert"><span>Schaden</span><b>' + dmT(g, s) + '</b></div></div></div>' +
       '<div class="schloss"><b>⚠ Spoiler</b><span>Klicken zum Aufdecken</span></div></button>';
   }
   function liste() {
-    var gs = D.g.filter(passt), ord = ['normal', 'elite', 'zwischen', 'boss', 'helfer'], s = Z.stufe, o = '';
-    var cmp = { name: function (a, b) { return a.n.localeCompare(b.n, 'de'); }, level: function (a, b) { return b.lv[s][1] - a.lv[s][1]; }, leben: function (a, b) { return b.hp[s][1] - a.hp[s][1]; }, schaden: function (a, b) { return b.dm[s][1] - a.dm[s][1]; } }[Z.sort];
+    var gs = D.g.filter(passt), ord = ORD, s = Z.stufe, o = '';
+    var cmp = { name: function (a, b) { return a.n.localeCompare(b.n, 'de'); }, level: function (a, b) { return b.lv[s][1] - a.lv[s][1]; }, leben: function (a, b) { return b.hp[s][1] - a.hp[s][1]; }, schaden: function (a, b) { return dz(b, s)[1] - dz(a, s)[1]; } }[Z.sort];
     if (!gs.length) o = '<div class="leer">Kein Gegner passt zu dieser Suche. Verborgene Gegner findest du erst, wenn du Spoiler zeigst.</div>';
     else if (Z.sort === 'kat') ord.forEach(function (k) { var t = gs.filter(function (g) { return g.kat === k; }); if (!t.length) return;
       o += '<section class="gruppe"><h3><i style="background:' + HEX[k] + '"></i>' + KAT[k][0] + ' <small>' + t.length + ' · ' + KAT[k][2] + '</small></h3><div class="gitter">' + t.map(karte).join('') + '</div></section>'; });
@@ -290,11 +296,13 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
     else if (a.art === 'getroffen') p.push('<span class="pl s">wenn er getroffen wird</span>' + ch);
     else if (a.art === 'tod') p.push('<span class="pl s">beim Tod</span>');
     else if (a.art === 'kampfbeginn') p.push('<span class="pl t">zu Kampfbeginn</span>');
+    else if (a.art === 'frei') p.push('<span class="pl t">' + esc(a.text) + '</span>' + (a.einerVon ? ' <span class="pl">einer von ' + a.einerVon + ' Angriffen</span>' : ''));
+    if (x.nur) p.push('<span class="pl p">nur Stufe ' + x.nur.map(function (n) { return ROEM[n - 1]; }).join(', ') + '</span>');
     if (x.ph) p.push('<span class="pl p">' + esc(x.ph) + '</span>');
     return p.join(' ');
   }
   function faehigkeit(x, g) {
-    var s = Z.stufe, o = '<div class="fk"><h5>' + esc(x.n) + ' ' + ausloeser(x) + '</h5>' + (x.d ? '<code class="sid">' + esc(x.d) + '</code>' : '');
+    var s = Z.stufe, o = '<div class="fk' + (x.nur && x.nur.indexOf(s + 1) < 0 ? ' aus' : '') + '"><h5>' + esc(x.n) + ' ' + ausloeser(x) + '</h5>' + (x.d ? '<code class="sid">' + esc(x.d) + '</code>' : '');
     if (x.t) o += '<p>' + esc(grossA(x.t)) + '</p>';
     var sch = x.sch.map(function (d) { var v = d.w ? bereich(d.w[s], zahl) : d.txt; if (!v) return ''; return (d.mal > 1 ? d.mal + ' × ' : '') + '<b>' + v + '</b>' + (d.tick ? ' je Tick' : '') + (d.el ? ' ' + d.el : '') + (d.r ? ' <span style="color:var(--mu)">(' + zahl(d.r) + ' Blöcke Umkreis)</span>' : ''); }).filter(Boolean);
     if (sch.length) o += '<div class="fz"><span>Schaden</span><div>' + sch.join('<br>') + '</div></div>';
@@ -305,9 +313,10 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
     if (chips.length) o += '<div class="fz"><span>Auf dich</span><div class="chips">' + chips.join('') + '</div></div>';
     if (dabei.length) o += '<div class="fz"><span>Dabei</span><div>' + esc(dabei.join(' · ')) + '</div></div>';
     var selbst = x.sel.map(function (e) { return '<span class="chip gut">' + esc(e.n) + ' ' + ROEM[e.st - 1] + '</span>'; });
-    x.heilt.forEach(function (h) { selbst.push('<span class="chip gut">heilt ' + (h.proz ? zahl(h.proz) + ' % Leben' : zahl(h.fest) + ' ❤') + '</span>'); });
+    x.heilt.forEach(function (h) { selbst.push('<span class="chip gut">' + (h.mal > 1 ? h.mal + ' × ' : '') + 'heilt ' + (h.proz ? zahl(h.proz) + ' % Leben' : zahl(h.fest) + ' ❤') + '</span>'); });
     if (selbst.length) o += '<div class="fz"><span>Auf sich</span><div class="chips">' + selbst.join('') + '</div></div>';
-    if (x.ruft.length) o += '<div class="fz"><span>Ruft</span><div class="helf">' + x.ruft.map(function (r) { var h = r.k && byK[r.k]; return h ? '<button data-k="' + r.k + '">' + (r.anz > 1 ? r.anz + ' × ' : '') + esc(nameVon(h) === '???' ? h.n : h.n) + '</button>' : '<span class="chip">' + (r.anz > 1 ? r.anz + ' × ' : '') + esc(r.n || 'Verstärkung') + '</span>'; }).join('') + '</div></div>';
+    if (x.ruft.length && x.ruftAnz) o += '<div class="fz"><span>Ruft</span><div>' + x.ruftAnz + ' Helfer, jeder zufällig einer von:<div class="helf" style="margin-top:4px">' + x.ruft.map(function (r) { var h = r.k && byK[r.k]; return h ? '<button data-k="' + r.k + '">' + esc(h.n) + '</button>' : '<span class="chip">' + esc(r.n || 'Verstärkung') + '</span>'; }).join('') + '</div></div></div>';
+    else if (x.ruft.length) o += '<div class="fz"><span>Ruft</span><div class="helf">' + x.ruft.map(function (r) { var h = r.k && byK[r.k]; return h ? '<button data-k="' + r.k + '">' + (r.anz > 1 ? r.anz + ' × ' : '') + esc(nameVon(h) === '???' ? h.n : h.n) + '</button>' : '<span class="chip">' + (r.anz > 1 ? r.anz + ' × ' : '') + esc(r.n || 'Verstärkung') + '</span>'; }).join('') + '</div></div>';
     var rest = []; if (x.cd && x.au.art !== 'takt') rest.push('Abklingzeit ' + zahl(x.cd) + ' s'); if (x.rw) rest.push('Reichweite ' + zahl(x.rw) + ' Blöcke'); if (x.so.indexOf('Geschoss') >= 0) rest.push('Geschoss');
     if (rest.length) o += '<div class="fz"><span>Weiteres</span><div>' + rest.join(' · ') + '</div></div>';
     x.ans.forEach(function (a) { o += '<div class="ansage">„' + esc(a) + '“</div>'; });
@@ -316,36 +325,41 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
   function beute(g) {
     var t = g.dr[Z.stufe + 1]; if (!t) return '';
     var anz = t.min == null && t.max == null ? '' : ' · Gegenstände je Gegner laut Tabelle: ' + (t.min === t.max || t.max == null ? t.min : t.min == null ? 'bis ' + t.max : t.min + '–' + t.max);
-    return '<h4>🎒 Beute <small>Stufe ' + ROEM[Z.stufe] + ' · Chancen wie in der Droptabelle' + anz + ' · vorläufig</small></h4><div class="tabw"><div class="drop dkopf"><span></span><span>Gegenstand</span><span>Menge</span><span class="mb" style="background:none"></span><span>Chance</span></div>' +
-      t.e.map(function (e) { return '<div class="drop"><i class="ic i' + e.i + '"></i><span style="color:var(--t-' + e.t + ')">' + esc(e.n) + '</span><span>' + (e.min === e.max ? e.min : e.min + '–' + e.max) + '</span><div class="mb"><i style="width:' + Math.min(100, e.c) + '%"></i></div><b>' + proz(e.c) + ' %</b></div>'; }).join('') + '</div>';
+    return '<h4>🎒 Beute <small>Stufe ' + ROEM[Z.stufe] + ' · ' + (t.text || 'Chancen wie in der Droptabelle' + anz + ' · vorläufig') + '</small></h4><div class="tabw"><div class="drop dkopf"><span></span><span>Gegenstand</span><span>Menge</span><span class="mb" style="background:none"></span><span>Chance</span></div>' +
+      t.e.map(function (e) { return '<div class="drop"><i class="ic' + (e.i != null ? ' i' + e.i : '') + '">' + (e.sym || '') + '</i><span style="color:var(--t-' + e.t + ')">' + link(e.u, esc(e.n)) + (e.x ? ' <em class="ext">' + esc(e.x) + '</em>' : '') + '</span><span>' + (e.min === e.max ? e.min : e.min + '–' + e.max) + '</span><div class="mb"><i style="width:' + Math.min(100, e.c) + '%"></i></div><b>' + proz(e.c) + ' %</b></div>'; }).join('') + '</div>';
   }
   function steckbrief(k) {
     var g = byK[k]; if (!g) return; var s = Z.stufe, o = '';
     var tempo = g.tempo == null ? null : g.tempo < 0.26 ? 'langsam' : g.tempo <= 0.32 ? 'normal' : g.tempo <= 0.38 ? 'schnell' : 'sehr schnell';
     var zitat = g.zs.length ? '<div class="zitat">„' + g.zs.map(esc).join(' ') + '“</div>' : '';
-    o += '<div class="steck" style="--kf:' + FARBE[g.kat] + '"><button class="zu-x" data-zu aria-label="Steckbrief schließen">×</button><div class="skopf"><div class="buehne"><span class="marke">' + KAT[g.kat][1] + '</span><div class="bild b' + g.b + '"></div></div><div class="txt"><div class="typ">' + esc(g.typ) + (g.hv && byK[g.hv] ? ' · gerufen von ' + esc(byK[g.hv].n) : '') + '</div><h3>' + esc(g.n) + '</h3><p class="rolle">' + esc(g.rolle) + '</p>' + zitat +
-      (g.aus.length ? '<div class="ausr">' + g.aus.map(function (a) { return '<span>' + (a.i != null ? '<i class="ic i' + a.i + '"></i>' : '') + esc(a.n) + '</span>'; }).join('') + '</div>' : '') + '</div></div><div class="srumpf">';
+    o += '<div class="steck" style="--kf:' + FARBE[g.kat] + '"><button class="zu-x" data-zu aria-label="Steckbrief schließen">×</button><div class="skopf"><div class="buehne"><span class="marke">' + KAT[g.kat][1] + '</span><div class="bild b' + g.b + '"></div>' + m3d(g, true) + '</div><div class="txt"><div class="typ">' + esc(g.typ) + (g.hv && byK[g.hv] ? ' · gerufen von ' + esc(sichtbar(byK[g.hv]) ? byK[g.hv].n : 'einem ' + KAT[byK[g.hv].kat][1]) : '') + '</div><h3>' + esc(g.n) + '</h3><p class="rolle">' + esc(g.rolle) + '</p>' + zitat + bewegung(g) + (g.wl ? '<p class="wl">' + link(g.wl[0], '📖 ' + esc(g.wl[1])) + '</p>' : '') +
+      (g.aus.length ? '<div class="ausr">' + g.aus.map(function (a) { return '<span>' + (a.i != null ? '<i class="ic i' + a.i + '"></i>' : '') + link(a.u, esc(a.n)) + '</span>'; }).join('') + '</div>' : '') + '</div></div><div class="srumpf">';
     o += '<h4>📊 Werte <small>Stufe ' + ROEM[s] + (g.erbt ? ' · Level wie der Gegner, der ihn ruft' : '') + '</small></h4><div class="statg">' +
-      '<div class="stat"><span>Level</span><b>' + bereich(g.lv[s], ganz) + '</b></div><div class="stat"><span>Leben</span><b>' + bereich(g.hp[s], ganz) + ' ❤</b></div><div class="stat"><span>Schaden</span><b>' + bereich(g.dm[s], zahl) + '</b><em>Nahkampf, vor deiner Rüstung</em></div>' +
+      '<div class="stat"><span>Level</span><b>' + bereich(g.lv[s], ganz) + '</b></div><div class="stat"><span>Leben</span><b>' + bereich(g.hp[s], ganz) + ' ❤</b></div><div class="stat"><span>Schaden</span><b>' + dmT(g, s, zahl) + '</b><em>' + esc(g.dm ? g.dmArt || 'Nahkampf, vor deiner Rüstung' : 'kein normaler Schlag, Schaden nur über die Fähigkeiten') + '</em></div>' +
       (g.ru ? '<div class="stat"><span>Rüstung</span><b>' + bereich(g.ru[s], zahl) + '</b></div>' : '') + (tempo ? '<div class="stat"><span>Tempo</span><b>' + tempo + '</b></div>' : '') +
       (g.sicht ? '<div class="stat"><span>Sichtweite</span><b>' + ganz(g.sicht) + '</b><em>Blöcke</em></div>' : '') + (g.gr && g.gr !== 1 ? '<div class="stat"><span>Größe</span><b>× ' + zahl(g.gr) + '</b></div>' : '') + (g.fest ? '<div class="stat"><span>Rückstoß</span><b>immun</b><em>lässt sich nicht wegstoßen</em></div>' : '') + '</div>';
     var schw = []; g.sk.forEach(function (x) { if (x.au.art === 'schwelle') (x.au.liste || [x.au.p]).forEach(function (p) { schw.push({ p: p, n: x.n }); }); });
     if (schw.length) { var je = {}; schw.forEach(function (x) { (je[x.p] = je[x.p] || []).push(x.n); });
       o += '<h4>❤ Lebensleiste <small>ab diesen Schwellen ändert sich der Kampf</small></h4><div class="phasen">' + Object.keys(je).map(function (p) { return '<div class="m" style="left:' + p + '%"><b>' + p + ' %</b><span>' + esc(je[p].join(', ')) + '</span></div>'; }).join('') + '</div>'; }
-    o += '<div class="zwei"><div><h4>📈 Alle Stufen</h4><div class="tabw"><table><tr><th>Stufe</th><th class="r">Level</th><th class="r">Leben</th><th class="r">Schaden</th></tr>' + [0, 1, 2, 3, 4].map(function (i) { return '<tr' + (i === s ? ' class="an"' : '') + '><td>Stufe ' + ROEM[i] + '</td><td class="r">' + bereich(g.lv[i], ganz) + '</td><td class="r">' + bereich(g.hp[i], ganz) + ' ❤</td><td class="r">' + bereich(g.dm[i], zahl) + '</td></tr>'; }).join('') + '</table></div></div><div>';
+    o += '<div class="zwei"><div><h4>📈 Alle Stufen</h4><div class="tabw"><table><tr><th>Stufe</th><th class="r">Level</th><th class="r">Leben</th><th class="r">Schaden</th></tr>' + [0, 1, 2, 3, 4].map(function (i) { return '<tr' + (i === s ? ' class="an"' : '') + '><td>Stufe ' + ROEM[i] + '</td><td class="r">' + bereich(g.lv[i], ganz) + '</td><td class="r">' + bereich(g.hp[i], ganz) + ' ❤</td><td class="r">' + dmT(g, i, zahl) + '</td></tr>'; }).join('') + '</table></div></div><div>';
     if (g.mods.length) o += '<h4>🛡 So viel Schaden kommt an <small>100 % = normal</small></h4>' + g.mods.map(function (m) { var p = Math.round(m.f * 100), f = p < 100 ? 'var(--bad)' : 'var(--gut)'; return '<div class="modz"><span>' + esc(m.a) + '</span><div class="modb"><i style="width:' + Math.min(100, p / 2) + '%;background:' + f + '"></i><u></u></div><b style="color:' + f + '">' + (p === 0 ? 'immun' : p + ' %') + '</b></div>'; }).join('');
     if (g.merk.length) o += '<h4>✨ Merkmale</h4><ul class="merk">' + g.merk.map(function (m) { return '<li><b>' + esc(grossA(m.n)) + '</b> – ' + esc(m.t) + '</li>'; }).join('') + '</ul>';
+    if (g.eff && g.eff.length) o += '<h4>🌀 Was du sonst noch siehst <small>keine Gegner</small></h4><ul class="merk">' + g.eff.map(function (m) { return '<li><b>' + esc(grossA(m.n)) + '</b> – ' + esc(m.t) + '</li>'; }).join('') + '</ul>';
     g.tipps.forEach(function (t) { o += '<div class="tippk">💡 ' + esc(grossA(t)) + '</div>'; });
     o += '</div></div>';
-    if (g.kampf) o += '<h4>⚔ So kämpft er <small>das Wichtigste auf einen Blick</small></h4><div class="tabw"><table><tr><th>Angriff</th><th>Was passiert</th><th>Tipp</th></tr>' + g.kampf.map(function (z) { return '<tr><td><b>' + esc(z[0]) + '</b></td><td>' + esc(z[1]) + '</td><td>' + esc(z[2] || '–') + '</td></tr>'; }).join('') + '</table></div>';
+    var tipp = g.kampf && g.kampf.some(function (z) { return z[2]; });
+    if (g.kampf) o += '<h4>⚔ So kämpft er <small>das Wichtigste auf einen Blick</small></h4><div class="tabw"><table><tr><th>Angriff</th><th>Was passiert</th>' + (tipp ? '<th>Tipp</th>' : '') + '</tr>' + g.kampf.map(function (z) { return '<tr><td><b>' + esc(z[0]) + '</b></td><td>' + esc(z[1]) + '</td>' + (tipp ? '<td>' + esc(z[2] || '–') + '</td>' : '') + '</tr>'; }).join('') + '</table></div>';
     if (g.sk.length) o += '<h4>🔥 Fähigkeiten <small>' + g.sk.length + ' · Schadenswerte für Stufe ' + ROEM[s] + ', vor deiner Rüstung</small></h4><div class="faeh">' + g.sk.map(function (x) { return faehigkeit(x, g); }).join('') + '</div>';
     if (g.zt.length) o += '<h4>💀 Wenn er fällt</h4>' + g.zt.map(function (a) { return '<div class="ansage">„' + esc(a) + '“</div>'; }).join('');
     o += beute(g);
+    if (g.ohneBeute) o += '<h4>🎒 Beute</h4><p class="sub" style="margin:0">' + esc(g.ohneBeute) + '</p>';
     if (g.helfer.length) o += '<h4>👥 Helfer</h4><div class="helf">' + g.helfer.map(function (h) { return '<button data-k="' + h + '">' + esc(byK[h].n) + '</button>'; }).join('') + '</div>';
     o += '</div></div>';
     var dlg = $('#steck'); dlg.innerHTML = o; dlg.dataset.k = k; if (!dlg.open) dlg.showModal(); $('.srumpf', dlg).scrollTop = 0;
     try { history.replaceState(null, '', '#' + k); } catch (e) { /* egal */ }
   }
+  function bewegung(g) { if (!g.m || !window.BDX3D) return ''; var l = window.BDX3D.animationen(g.m); if (l.length < 2) return ''; var st = window.BDX3D.standard(g.m);
+    return '<div class="anims"><span>Bewegung' + (l.some(function (a) { return a.nach; }) ? ' (nachgestellt)' : ' (aus dem Modell)') + ':</span>' + l.map(function (a) { return '<button data-anim="' + esc(a.n) + '" aria-pressed="' + (a.n === st) + '">' + esc(a.n.replace(/ \(nachgestellt\)$/, '')) + '</button>'; }).join('') + '</div>'; }
   function oeffne(k) { var g = byK[k]; if (!g) return; if (!sichtbar(g)) { Z.offen[k] = 1; alles(); return; } steckbrief(k); }
 
   // ---------- Beute-Verzeichnis ----------
@@ -357,13 +371,15 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
       .sort(function (a, b) { return (rang[b.e.t] || 0) - (rang[a.e.t] || 0) || a.e.n.localeCompare(b.e.n, 'de'); });
     $('#verz').innerHTML = l.length ? l.map(function (x) { x.q.sort(function (a, b) { return b.p - a.p; }); var verd = 0;
       var zeilen = x.q.map(function (y) { if (!sichtbar(y.g)) { verd++; return ''; } return '<div class="q"><button data-k="' + y.g.k + '">' + esc(y.g.n) + '</button><b>' + proz(y.p) + ' % · ' + (y.min === y.max ? y.min : y.min + '–' + y.max) + '</b></div>'; }).join('');
-      return '<div class="vz"><h5><i class="ic i' + x.e.i + '"></i><span style="color:var(--t-' + x.e.t + ')">' + esc(x.e.n) + '</span></h5>' + zeilen + (verd ? '<div class="q" style="color:var(--mu)"><span>+ ' + verd + ' verborgene' + (verd === 1 ? 'r' : '') + ' Gegner</span></div>' : '') + '</div>'; }).join('') : '<div class="leer">Kein Gegenstand passt zu dieser Suche.</div>';
+      return '<div class="vz"><h5><i class="ic' + (x.e.i != null ? ' i' + x.e.i : '') + '">' + (x.e.sym || '') + '</i><span style="color:var(--t-' + x.e.t + ')">' + link(x.e.u, esc(x.e.n)) + '</span></h5>' + zeilen + (verd ? '<div class="q" style="color:var(--mu)"><span>+ ' + verd + ' verborgene' + (verd === 1 ? 'r' : '') + ' Gegner</span></div>' : '') + '</div>'; }).join('') : '<div class="leer">Kein Gegenstand passt zu dieser Suche.</div>';
   }
 
   function alles() { stufen(); diagramm(); liste(); verzeichnis(); $('#spoilerKnopf').setAttribute('aria-pressed', Z.spoiler); $('#spoilerKnopf').lastChild.textContent = Z.spoiler ? ' Spoiler werden gezeigt' : ' Spoiler zeigen'; var d = $('#steck'); if (d.open) steckbrief(d.dataset.k); }
 
   // ---------- Bedienung ----------
   document.addEventListener('click', function (ev) {
+    if (ev.target.closest('a[href]')) return;
+    var an = ev.target.closest('[data-anim]'); if (an) { var c = $('#steck canvas.m3d'); if (c) { c.dataset.anim = an.dataset.anim; delete c.dataset.fertig; } an.parentNode.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b === an); }); return; }
     var t = ev.target.closest('[data-stufe],[data-k],[data-kat],[data-zu],#spoilerKnopf'); if (!t) return;
     if (t.hasAttribute('data-zu')) { $('#steck').close(); return; }
     if (t.id === 'spoilerKnopf') { Z.spoiler = !Z.spoiler; merke(); alles(); return; }
@@ -379,7 +395,7 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
   dlg.addEventListener('close', function () { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* egal */ } });
   var tip = $('#tip');
   document.addEventListener('mousemove', function (ev) { var p = ev.target.closest && ev.target.closest('.pkt'); if (!p) { tip.style.display = 'none'; return; } var g = byK[p.dataset.k], s = Z.stufe;
-    tip.innerHTML = '<b style="color:' + HEX[g.kat] + '">' + esc(nameVon(g)) + '</b>' + KAT[g.kat][1] + ' · Level ' + bereich(g.lv[s], ganz) + '<br>' + bereich(g.hp[s], ganz) + ' ❤ · ' + bereich(g.dm[s], zahl) + ' Schaden';
+    tip.innerHTML = '<b style="color:' + HEX[g.kat] + '">' + esc(nameVon(g)) + '</b>' + KAT[g.kat][1] + ' · Level ' + bereich(g.lv[s], ganz) + '<br>' + bereich(g.hp[s], ganz) + ' ❤ · ' + dmT(g, s, zahl) + ' Schaden';
     tip.style.display = 'block'; tip.style.left = Math.min(window.innerWidth - 270, ev.clientX + 14) + 'px'; tip.style.top = (ev.clientY + 16) + 'px'; });
 
   kacheln(); alles();

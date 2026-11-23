@@ -14,10 +14,19 @@
    "id": "gegner",
    "titel": "Floor II · Gegner",
    "pfad": "gegner/",
-   "sha256": "616233f53eb37ac710bc9300caaf30848445931615ee3180c7a7f4af48f0e461",
-   "bytes": 716059,
+   "sha256": "04fbc25c4c03103770520c6298ff01368551504aca9e3537caa80a2614854572",
+   "bytes": 719548,
    "datenStand": "12.11.2026",
-   "gebaut": "2026-11-18T16:59:49.576Z"
+   "gebaut": "2026-11-23T17:16:55.332Z"
+  },
+  {
+   "id": "gegner-f1",
+   "titel": "Floor I · Gegner",
+   "pfad": "floor1-gegner/",
+   "sha256": "a0e618cf2dce118e85dbf8e1db02e2e8554dc834f80f8a646a5539502bbc5e05",
+   "bytes": 1369874,
+   "datenStand": "10.11.2026",
+   "gebaut": "2026-11-23T17:16:56.724Z"
   }
  ]
 }
