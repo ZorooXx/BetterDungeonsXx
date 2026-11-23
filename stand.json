@@ -27,6 +27,24 @@
    "bytes": 1619106,
    "datenStand": "23.11.2026",
    "gebaut": "2026-11-23T19:38:57.315Z"
+  },
+  {
+   "id": "elemente",
+   "titel": "Elemente-System",
+   "pfad": "elemente/",
+   "sha256": "2ab1ac39e1c80cd7dd1bd9a24f429fcd69dc20a54a24401821301cc093680fe3",
+   "bytes": 142874,
+   "datenStand": "11.11.2026",
+   "gebaut": "2026-11-23T20:26:29.579Z"
+  },
+  {
+   "id": "faehigkeitsschaden",
+   "titel": "Fähigkeitsschaden",
+   "pfad": "faehigkeitsschaden/",
+   "sha256": "ee9440d7171cda038c1c3dbdfa1a8f81db123073268b1d28f9933278a39c44ae",
+   "bytes": 114767,
+   "datenStand": "08.11.2026",
+   "gebaut": "2026-11-23T20:26:33.273Z"
   }
  ]
 }
