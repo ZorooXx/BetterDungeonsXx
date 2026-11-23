@@ -23,10 +23,10 @@
    "id": "gegner-f1",
    "titel": "Floor I · Gegner",
    "pfad": "floor1-gegner/",
-   "sha256": "a0e618cf2dce118e85dbf8e1db02e2e8554dc834f80f8a646a5539502bbc5e05",
+   "sha256": "efd72980ef91122081fbd7df1c8c690480a4c3d7e16daf19db8b715c4916bf0d",
    "bytes": 1369874,
-   "datenStand": "10.11.2026",
-   "gebaut": "2026-11-23T17:16:56.724Z"
+   "datenStand": "23.11.2026",
+   "gebaut": "2026-11-23T17:23:16.890Z"
   }
  ]
 }
