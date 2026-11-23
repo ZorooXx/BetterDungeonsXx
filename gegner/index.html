@@ -330,13 +330,14 @@ h2{flex-wrap:wrap}.seg{max-width:100%;overflow-x:auto}
   }
   function steckbrief(k) {
     var g = byK[k]; if (!g) return; var s = Z.stufe, o = '';
-    var tempo = g.tempo == null ? null : g.tempo < 0.26 ? 'langsam' : g.tempo <= 0.32 ? 'normal' : g.tempo <= 0.38 ? 'schnell' : 'sehr schnell';
+    // D.tempoStufen (optional, Floor I): eigene Skala wie im Wiki, [Grenze, Wort, inklusive]; ohne = Floor-II-Skala
+    var tempo = g.tempo == null ? null : D.tempoStufen ? (function (v) { for (var i = 0; i < D.tempoStufen.length; i++) { var t = D.tempoStufen[i]; if (t[0] == null || (t[2] ? v <= t[0] : v < t[0])) return t[1]; } return null; })(g.tempo) : g.tempo < 0.26 ? 'langsam' : g.tempo <= 0.32 ? 'normal' : g.tempo <= 0.38 ? 'schnell' : 'sehr schnell';
     var zitat = g.zs.length ? '<div class="zitat">„' + g.zs.map(esc).join(' ') + '“</div>' : '';
     o += '<div class="steck" style="--kf:' + FARBE[g.kat] + '"><button class="zu-x" data-zu aria-label="Steckbrief schließen">×</button><div class="skopf"><div class="buehne"><span class="marke">' + KAT[g.kat][1] + '</span><div class="bild b' + g.b + '"></div>' + m3d(g, true) + '</div><div class="txt"><div class="typ">' + esc(g.typ) + (g.hv && byK[g.hv] ? ' · gerufen von ' + esc(sichtbar(byK[g.hv]) ? byK[g.hv].n : 'einem ' + KAT[byK[g.hv].kat][1]) : '') + '</div><h3>' + esc(g.n) + '</h3><p class="rolle">' + esc(g.rolle) + '</p>' + zitat + bewegung(g) + (g.wl ? '<p class="wl">' + link(g.wl[0], '📖 ' + esc(g.wl[1])) + '</p>' : '') +
       (g.aus.length ? '<div class="ausr">' + g.aus.map(function (a) { return '<span>' + (a.i != null ? '<i class="ic i' + a.i + '"></i>' : '') + link(a.u, esc(a.n)) + '</span>'; }).join('') + '</div>' : '') + '</div></div><div class="srumpf">';
     o += '<h4>📊 Werte <small>Stufe ' + ROEM[s] + (g.erbt ? ' · Level wie der Gegner, der ihn ruft' : '') + '</small></h4><div class="statg">' +
       '<div class="stat"><span>Level</span><b>' + bereich(g.lv[s], ganz) + '</b></div><div class="stat"><span>Leben</span><b>' + bereich(g.hp[s], ganz) + ' ❤</b></div><div class="stat"><span>Schaden</span><b>' + dmT(g, s, zahl) + '</b><em>' + esc(g.dm ? g.dmArt || 'Nahkampf, vor deiner Rüstung' : 'kein normaler Schlag, Schaden nur über die Fähigkeiten') + '</em></div>' +
-      (g.ru ? '<div class="stat"><span>Rüstung</span><b>' + bereich(g.ru[s], zahl) + '</b></div>' : '') + (tempo ? '<div class="stat"><span>Tempo</span><b>' + tempo + '</b></div>' : '') +
+      (g.ru ? '<div class="stat"><span>Rüstung</span><b>' + bereich(g.ru[s], zahl) + '</b></div>' : '') + (tempo ? '<div class="stat"><span>Tempo</span><b>' + tempo + '</b>' + (D.tempoWert ? '<em>Wert ' + zahl(g.tempo) + '</em>' : '') + '</div>' : '') +
       (g.sicht ? '<div class="stat"><span>Sichtweite</span><b>' + ganz(g.sicht) + '</b><em>Blöcke</em></div>' : '') + (g.gr && g.gr !== 1 ? '<div class="stat"><span>Größe</span><b>× ' + zahl(g.gr) + '</b></div>' : '') + (g.fest ? '<div class="stat"><span>Rückstoß</span><b>immun</b><em>lässt sich nicht wegstoßen</em></div>' : '') + '</div>';
     var schw = []; g.sk.forEach(function (x) { if (x.au.art === 'schwelle') (x.au.liste || [x.au.p]).forEach(function (p) { schw.push({ p: p, n: x.n }); }); });
     if (schw.length) { var je = {}; schw.forEach(function (x) { (je[x.p] = je[x.p] || []).push(x.n); });
