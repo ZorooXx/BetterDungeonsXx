@@ -32,19 +32,19 @@
    "id": "elemente",
    "titel": "Elemente-System",
    "pfad": "elemente/",
-   "sha256": "2a5afa3ab498d8aa554b2bdc5ec56f3d2af130f2b4dba44ff5a663f003006cdb",
+   "sha256": "77d956aa3de52c394b289ef739a55bafd77192d073871d4afa90ab17c8352fea",
    "bytes": 142874,
    "datenStand": "11.11.2026",
-   "gebaut": "2026-11-25T20:34:38.376Z"
+   "gebaut": "2026-11-26T19:07:59.081Z"
   },
   {
    "id": "faehigkeitsschaden",
    "titel": "Fähigkeitsschaden",
    "pfad": "faehigkeitsschaden/",
-   "sha256": "f82b1f48491c950d837236f934c0b2971631be8fa72598c7b82acbc037cc364c",
-   "bytes": 114767,
+   "sha256": "61d99549e4254354b5d6dd0653d0a230c1f50efc3cff5baf634cfffd90bd2666",
+   "bytes": 115379,
    "datenStand": "08.11.2026",
-   "gebaut": "2026-11-25T20:34:42.203Z"
+   "gebaut": "2026-11-26T19:08:02.757Z"
   }
  ]
 }
